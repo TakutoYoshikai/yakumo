@@ -67,7 +67,6 @@ def to_bytes(lsb):
 
 def get_metadata(lsbs):
     index = 0
-    print(lsbs[:METADATA_SIZE])
     separator = lsbs[index:SEPARATOR_SIZE]
     index += SEPARATOR_SIZE
     end_separator = lsbs[index:index+END_SEPARATOR_SIZE]
@@ -110,14 +109,8 @@ def export_files(dr):
     images = get_image_list(image_paths)
     lsbs = get_all_lsbs(images)
     metadata = get_metadata(lsbs)
-    print({
-        "separator":metadata["separator"],
-        "end_separator":metadata["end_separator"],
-        "file_separator": metadata["file_separator"],
-    })
     lsbs = metadata["lsbs"]
     files = list(map(lambda f: get_filename_and_data(f, metadata["file_separator"]), split(lsbs, metadata["separator"], metadata["end_separator"])))
-    print(files)
     for file in files:
         filename, data = file
         export_file(filename, data)
@@ -126,11 +119,6 @@ def create_lsb(data_dir):
     separator = os.urandom(int(SEPARATOR_SIZE / 8))
     end_separator = os.urandom(int(END_SEPARATOR_SIZE / 8))
     file_separator = os.urandom(int(FILE_SEPARATOR_SIZE / 8))
-    print({
-        "separator": separator,
-        "end_separator": end_separator,
-        "file_separator": file_separator,
-    })
     lsbs = bytearray()
     lsbs.extend(separator)
     lsbs.extend(end_separator)
@@ -164,7 +152,6 @@ def embed(image_dir, data_dir):
     images = get_image_list(image_paths)
     data = create_lsb(data_dir)
     binary = list(map(lambda x: int(x), "".join(message_to_binary(data))))
-    print(binary[:METADATA_SIZE])
     index = 0
     for path, image in zip(image_paths, images):
         width, height = image.size
