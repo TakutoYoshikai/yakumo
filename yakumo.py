@@ -40,6 +40,7 @@ def get_lsbs(image):
             lsb.append(r)
             lsb.append(g)
             lsb.append(b)
+    return lsb
 
 def get_all_lsbs_and_iv(images):
     lsbs = []
@@ -50,6 +51,14 @@ def get_all_lsbs_and_iv(images):
     size = len(lsbs) - (len(lsbs) % 8)
     lsbs = lsbs[0:size]
     return (lsbs, iv)
+
+def get_all_lsbs(images):
+    lsbs = []
+    for image in images:
+        lsbs.extend(get_lsbs(image))
+    size = len(lsbs) - (len(lsbs) % 8)
+    lsbs = lsbs[0:size]
+    return lsbs
 
 def to_bytes(lsb):
     return bytes([sum([byte[b] << b for b in range(0, 8)]) for byte in zip(*(iter(lsb),) * 8)])
@@ -73,13 +82,37 @@ def split(lsbs, separator, end_separator):
     while True:
         index = _bytes.find(separator)
         if index == -1:
+            end_index = _bytes.find(end_separator)
+            splitted.append(_bytes[0:end_index + 1])
             break;
-        splitted.append([0:index + 1])
+        splitted.append(_bytes[0:index + 1])
         _bytes = _bytes[index + 1:]
     return splitted
 
 def get_filename_and_data(_bytes):
     index = _bytes.find(FILE_SEPARATOR)
     return (_bytes[0:index + 1].decode(), _bytes[index + 1:])
+
+
+def export_file(filename, data):
+    with open("./" + filename, "w") as f:
+        f.write(data)
+
+
+def export_files(dr):
+    image_paths = get_image_path_list(dr)
+    images = get_image_list(image_paths)
+    lsbs = get_all_lsbs(images)
+    metadata = get_metadata(lsbs)
+    lsbs = metadata["usbs"]
+    files = list(map(lambda f: get_filename_and_data(f), split(lsbs, metadata["separator"], metadata["end_separator"])))
+    for file in files:
+        filename, data = file
+        export_file(filename, data)
+
+
+    
+    
+
 
 
