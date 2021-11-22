@@ -3,6 +3,7 @@ import os
 import argparse
 import random
 import glob
+import sys
 
 IV_SIZE = 128 # bit
 SEPARATOR_SIZE = 128 # bit
@@ -40,7 +41,7 @@ def get_lsbs(image):
             if image.mode == "RGBA":
                 pixel = pixel[:3]
             for color in pixel:
-                lsb.append(getbit(color))
+                lsb.append(get_bit(color))
     return lsb
 
 def get_all_lsbs_and_iv(images):
@@ -62,17 +63,17 @@ def get_all_lsbs(images):
     return lsbs
 
 def to_bytes(lsb):
-    return bytes([sum([byte[b] << (b) for b in range(0, 8)]) for byte in zip(*(iter(lsb),) * 8)])
+    return bytes([sum([byte[b] << (7 - b) for b in range(0, 8)]) for byte in zip(*(iter(lsb),) * 8)])
 
 def get_metadata(lsbs):
     index = 0
+    print(lsbs[:METADATA_SIZE])
     separator = lsbs[index:SEPARATOR_SIZE]
     index += SEPARATOR_SIZE
     end_separator = lsbs[index:index+END_SEPARATOR_SIZE]
     index += END_SEPARATOR_SIZE
     file_separator = lsbs[index:index+FILE_SEPARATOR_SIZE]
     new_lsbs = lsbs[METADATA_SIZE:]
-    print(to_bytes(new_lsbs))
     return {
         "separator": to_bytes(separator),
         "end_separator": to_bytes(end_separator),
@@ -87,20 +88,20 @@ def split(lsbs, separator, end_separator):
     while True:
         index = _bytes.find(separator)
         if index == -1:
-            end_index = _bytes.find(end_separator)
-            splitted.append(_bytes[0:end_index + 1])
+            #end_index = _bytes.find(end_separator)
+            #splitted.append(_bytes[0:end_index + 1])
             break;
-        splitted.append(_bytes[0:index + 1])
-        _bytes = _bytes[int(SEPARATOR_SIZE / 8) + index + 1:]
+        splitted.append(_bytes[0:index])
+        _bytes = _bytes[int(SEPARATOR_SIZE / 8) + index:]
     return splitted
 
 def get_filename_and_data(_bytes, file_separator):
     index = _bytes.find(file_separator)
-    return (_bytes[0:index + 1].decode(), _bytes[int(FILE_SEPARATOR_SIZE / 8) + index + 1:])
+    return (_bytes[0:index].decode(), _bytes[index + int(FILE_SEPARATOR_SIZE / 8):])
 
 
 def export_file(filename, data):
-    with open("./" + filename, "w") as f:
+    with open("./" + filename, "wb") as f:
         f.write(data)
 
 
@@ -116,6 +117,7 @@ def export_files(dr):
     })
     lsbs = metadata["lsbs"]
     files = list(map(lambda f: get_filename_and_data(f, metadata["file_separator"]), split(lsbs, metadata["separator"], metadata["end_separator"])))
+    print(files)
     for file in files:
         filename, data = file
         export_file(filename, data)
@@ -134,7 +136,6 @@ def create_lsb(data_dir):
     lsbs.extend(end_separator)
     lsbs.extend(file_separator)
     file_paths = glob.glob(data_dir + "/*")
-    print(file_paths)
     for path in file_paths:
         filename = os.path.basename(path)
         with open(path, "rb") as f:
@@ -160,11 +161,10 @@ def message_to_binary(message):
 
 def embed(image_dir, data_dir):
     image_paths = get_image_path_list(image_dir)
-    print(image_paths)
     images = get_image_list(image_paths)
     data = create_lsb(data_dir)
-    print(data[:8])
     binary = list(map(lambda x: int(x), "".join(message_to_binary(data))))
+    print(binary[:METADATA_SIZE])
     index = 0
     for path, image in zip(image_paths, images):
         width, height = image.size
@@ -193,9 +193,11 @@ def embed(image_dir, data_dir):
 
 
             
-embed("/Users/lucky/Desktop/images", "/Users/lucky/Desktop/data")
-print("export")
-export_files("/Users/lucky/Desktop/images")
+
+if sys.argv[1] == "hide":
+    embed(sys.argv[2], sys.argv[3])
+elif sys.argv[1] == "reveal":
+    export_files(sys.argv[2])
 
 
 
