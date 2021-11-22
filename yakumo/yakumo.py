@@ -2,7 +2,7 @@ from PIL import Image
 import os
 import argparse
 import random
-import glob
+import pathlib
 import sys
 
 IV_SIZE = 128 # bit
@@ -100,6 +100,12 @@ def get_filename_and_data(_bytes, file_separator):
 
 
 def export_file(filename, data):
+    if not os.path.exists(os.path.dirname(filename)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
     with open("./" + filename, "wb") as f:
         f.write(data)
 
@@ -123,7 +129,8 @@ def create_lsb(data_dir):
     lsbs.extend(separator)
     lsbs.extend(end_separator)
     lsbs.extend(file_separator)
-    file_paths = glob.glob(data_dir + "/*")
+    p = pathlib.Path(data_dir)
+    file_paths = list(filter(lambda path: os.path.isfile(path), list(p.glob("**/*"))))
     for path in file_paths:
         filename = os.path.basename(path)
         with open(path, "rb") as f:
