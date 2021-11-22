@@ -1,13 +1,14 @@
 from PIL import Image
 import os
 import argparse
+import random
 
 IV_SIZE = 128 # bit
 SEPARATOR_SIZE = 128 # bit
 END_SEPARATOR_SIZE = 128 # bit
-FILE_SEPARATOR = 128
+FILE_SEPARATOR_SIZE = 128
 
-METADATA_SIZE = SEPARATOR_SIZE + END_SEPARATOR_SIZE
+METADATA_SIZE = SEPARATOR_SIZE + END_SEPARATOR_SIZE + FILE_SEPARATOR_SIZE
 
 def get_image_path_list(dr):
     imagenames = list(filter(lambda x: x.endswith(".png"), os.listdir(dr)))
@@ -68,6 +69,8 @@ def get_metadata(lsbs):
     separator = lsbs[index:SEPARATOR_SIZE]
     index += SEPARATOR_SIZE
     end_separator = lsbs[index:END_SEPARATOR_SIZE]
+    index += END_SEPARATOR_SIZE
+    file_separator = lsbs[index:FILE_SEPARATOR_SIZE]
     new_lsbs = lsbs[METADATA_SIZE:]
     return {
         "separator": to_bytes(separator),
@@ -89,8 +92,8 @@ def split(lsbs, separator, end_separator):
         _bytes = _bytes[index + 1:]
     return splitted
 
-def get_filename_and_data(_bytes):
-    index = _bytes.find(FILE_SEPARATOR)
+def get_filename_and_data(_bytes, file_separator):
+    index = _bytes.find(file_separator)
     return (_bytes[0:index + 1].decode(), _bytes[index + 1:])
 
 
@@ -105,10 +108,37 @@ def export_files(dr):
     lsbs = get_all_lsbs(images)
     metadata = get_metadata(lsbs)
     lsbs = metadata["usbs"]
-    files = list(map(lambda f: get_filename_and_data(f), split(lsbs, metadata["separator"], metadata["end_separator"])))
+    files = list(map(lambda f: get_filename_and_data(f, metadata["file_separator"]), split(lsbs, metadata["separator"], metadata["end_separator"])))
     for file in files:
         filename, data = file
         export_file(filename, data)
+
+def create_lsb(data_dir):
+    separator = os.urandom(SEPARATOR_SIZE / 8)
+    end_separator = os.urandom(END_SEPARATOR_SIZE / 8)
+    file_separator = os.urandom(FILE_SEPARATOR_SIZE / 8)
+    lsbs = bytes()
+    lsbs.extend(separator)
+    lsbs.extend(end_separator)
+    file_paths = list(filter(lambda f: os.path.isfile(f), os.listdir(data_dir)))
+    file_data_list = []
+    for path in file_paths:
+        filename = os.path.basename(path)
+        with open(path, "rb") as f:
+            one_file = bytes()
+            data = f.read()
+            one_file.extend(filename)
+            one_file.extend(file_separator)
+            one_file.extend(data)
+            one_file.extend(separator)
+            lsbs.extend(one_file)
+    lsbs.extend(end_separator)
+    return lsbs
+
+
+            
+
+
 
 
     
