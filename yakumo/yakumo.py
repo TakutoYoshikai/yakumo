@@ -181,10 +181,14 @@ def embed(image_dir, data_dir):
 
             
 
-if sys.argv[1] == "hide":
-    embed(sys.argv[2], sys.argv[3])
-elif sys.argv[1] == "reveal":
-    export_files(sys.argv[2])
+def main():
+    if sys.argv[1] == "hide":
+        embed(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == "reveal":
+        export_files(sys.argv[2])
+
+if __name__ == "__main__":
+    main()
 
 
 
