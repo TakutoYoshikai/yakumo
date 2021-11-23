@@ -63,6 +63,11 @@ def get_all_lsbs(images):
     lsbs = lsbs[:size]
     return lsbs
 
+def cut_useless_area(lsbs, end_separator):
+    _bytes = to_bytes(lsbs)
+    index = _bytes.find(end_separator)
+    return _bytes[:index]
+
 def to_bytes(lsb):
     return bytes([sum([byte[b] << (7 - b) for b in range(0, 8)]) for byte in zip(*(iter(lsb),) * 8)])
 
@@ -83,13 +88,11 @@ def get_metadata(lsbs):
     
 
 def split(lsbs, separator, end_separator):
-    _bytes = to_bytes(lsbs)
+    _bytes = lsbs
     splitted = []
     while True:
         index = _bytes.find(separator)
         if index == -1:
-            #end_index = _bytes.find(end_separator)
-            #splitted.append(_bytes[0:end_index + 1])
             break;
         splitted.append(_bytes[0:index])
         _bytes = _bytes[int(SEPARATOR_SIZE / 8) + index:]
@@ -116,7 +119,7 @@ def export_files(dr):
     images = get_image_list(image_paths)
     lsbs = get_all_lsbs(images)
     metadata = get_metadata(lsbs)
-    lsbs = metadata["lsbs"]
+    lsbs = cut_useless_area(metadata["lsbs"], metadata["end_separator"])
     files = list(map(lambda f: get_filename_and_data(f, metadata["file_separator"]), split(lsbs, metadata["separator"], metadata["end_separator"])))
     for file in files:
         filename, data = file
