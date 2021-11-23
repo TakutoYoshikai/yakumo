@@ -19,6 +19,7 @@ def get_image_path_list(dr):
     for imagename in imagenames:
         imagepath = dr + "/" + imagename
         imagepaths.append(imagepath)
+    imagepaths.sort()
     return imagepaths
 
 def get_image_list(image_paths):
