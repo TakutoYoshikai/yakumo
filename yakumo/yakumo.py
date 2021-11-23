@@ -113,16 +113,21 @@ def export_file(filename, data):
     with open("./" + filename, "wb") as f:
         f.write(data)
 
+def make_lsbs_and_metadata(images):
+    lsbs = get_all_lsbs(images)
+    for image in images:
+        image.close()
+    metadata = get_metadata(lsbs)
+    lsbs = cut_useless_area(metadata["lsbs"], metadata["end_separator"])
+    return (lsbs, metadata)
 
 def export_files(dr):
     image_paths = get_image_path_list(dr)
     images = get_image_list(image_paths)
-    lsbs = get_all_lsbs(images)
-    metadata = get_metadata(lsbs)
-    lsbs = cut_useless_area(metadata["lsbs"], metadata["end_separator"])
+    lsbs, metadata = make_lsbs_and_metadata(images)
     files = list(map(lambda f: get_filename_and_data(f, metadata["file_separator"]), split(lsbs, metadata["separator"], metadata["end_separator"])))
-    for file in files:
-        filename, data = file
+    for f in files:
+        filename, data = f
         export_file(filename, data)
 
 def create_lsb(_data_dir):
@@ -192,9 +197,6 @@ def embed(image_dir, data_dir):
                     return
         image.save(path)
 
-
-            
-
 def main():
     if sys.argv[1] == "hide":
         embed(sys.argv[2], sys.argv[3])
@@ -203,10 +205,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-    
-    
-
-
