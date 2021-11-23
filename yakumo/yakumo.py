@@ -4,6 +4,7 @@ import argparse
 import random
 import pathlib
 import sys
+import errno
 
 IV_SIZE = 128 # bit
 SEPARATOR_SIZE = 128 # bit
@@ -100,7 +101,7 @@ def get_filename_and_data(_bytes, file_separator):
 
 
 def export_file(filename, data):
-    if not os.path.exists(os.path.dirname(filename)):
+    if "/" in filename and not os.path.exists(os.path.dirname(filename)):
         try:
             os.makedirs(os.path.dirname(filename))
         except OSError as exc:
@@ -121,7 +122,10 @@ def export_files(dr):
         filename, data = file
         export_file(filename, data)
 
-def create_lsb(data_dir):
+def create_lsb(_data_dir):
+    data_dir = _data_dir
+    if not _data_dir.endswith("/"):
+        data_dir += "/"
     separator = os.urandom(int(SEPARATOR_SIZE / 8))
     end_separator = os.urandom(int(END_SEPARATOR_SIZE / 8))
     file_separator = os.urandom(int(FILE_SEPARATOR_SIZE / 8))
@@ -130,12 +134,13 @@ def create_lsb(data_dir):
     lsbs.extend(end_separator)
     lsbs.extend(file_separator)
     p = pathlib.Path(data_dir)
-    file_paths = list(filter(lambda path: os.path.isfile(path), list(p.glob("**/*"))))
+    file_paths = list(filter(lambda path: os.path.isfile(path), p.glob("**/*")))
     for path in file_paths:
         with open(path, "rb") as f:
             one_file = bytearray()
             data = f.read()
-            one_file.extend(str(path).encode())
+            _path = str(path)[len(data_dir):] if str(path).startswith(data_dir) else str(path)
+            one_file.extend(_path.encode())
             one_file.extend(file_separator)
             one_file.extend(data)
             one_file.extend(separator)
@@ -154,9 +159,6 @@ def message_to_binary(message):
         return format(message, "08b")
 
 def embed(image_dir, data_dir):
-    if data_dir == ".":
-        print("data directory must not be .")
-        return
     image_paths = get_image_path_list(image_dir)
     images = get_image_list(image_paths)
     data = create_lsb(data_dir)
