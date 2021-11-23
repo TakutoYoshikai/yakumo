@@ -14,13 +14,13 @@ FILE_SEPARATOR_SIZE = 128 # bit
 METADATA_SIZE = SEPARATOR_SIZE + END_SEPARATOR_SIZE + FILE_SEPARATOR_SIZE
 
 def get_image_path_list(dr):
-    imagenames = list(filter(lambda x: x.endswith(".png"), os.listdir(dr)))
-    imagepaths = []
-    for imagename in imagenames:
-        imagepath = dr + "/" + imagename
-        imagepaths.append(imagepath)
-    imagepaths.sort()
-    return imagepaths
+    image_names = list(filter(lambda x: x.endswith(".png"), os.listdir(dr)))
+    image_paths = []
+    for image_name in image_names:
+        image_path = dr + "/" + image_name
+        image_paths.append(image_path)
+    image_paths.sort()
+    return image_paths
 
 def get_image_list(image_paths):
     images = []
