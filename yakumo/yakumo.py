@@ -132,11 +132,10 @@ def create_lsb(data_dir):
     p = pathlib.Path(data_dir)
     file_paths = list(filter(lambda path: os.path.isfile(path), list(p.glob("**/*"))))
     for path in file_paths:
-        filename = os.path.basename(path)
         with open(path, "rb") as f:
             one_file = bytearray()
             data = f.read()
-            one_file.extend(filename.encode())
+            one_file.extend(str(path).encode())
             one_file.extend(file_separator)
             one_file.extend(data)
             one_file.extend(separator)
@@ -155,6 +154,9 @@ def message_to_binary(message):
         return format(message, "08b")
 
 def embed(image_dir, data_dir):
+    if data_dir == ".":
+        print("data directory must not be .")
+        return
     image_paths = get_image_path_list(image_dir)
     images = get_image_list(image_paths)
     data = create_lsb(data_dir)
