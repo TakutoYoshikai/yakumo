@@ -36,7 +36,6 @@ def get_bit(c):
 
 def get_lsbs(image):
     lsb = []
-    buf = []
     for y in range(image.size[1]):
         for x in range(image.size[0]):
             pixel = image.getpixel((x, y))
@@ -199,10 +198,15 @@ def embed(image_dir, data_dir):
         image.save(path)
 
 def main():
-    if sys.argv[1] == "hide":
-        embed(sys.argv[2], sys.argv[3])
-    elif sys.argv[1] == "reveal":
-        export_files(sys.argv[2])
+    parser = argparse.ArgumentParser(description="yakumo is a steganography tool.")
+    parser.add_argument("mode", help="hide or reveal")
+    parser.add_argument("-i", "--images", help="image directory")
+    parser.add_argument("-d", "--data", help="data directory")
+    args = parser.parse_args()
+    if args.mode == "hide":
+        embed(args.images, args.data)
+    elif args.mode == "reveal":
+        export_files(args.images)
 
 if __name__ == "__main__":
     main()
